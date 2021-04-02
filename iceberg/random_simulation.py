@@ -5,8 +5,8 @@
 
 # Libraries
 import random
-import cuthbert
-import bbc
+from iceberg import bbc, cuthbert
+
 
 # Given list of samples, returns total number of entities
 def __list_entities__(samples):

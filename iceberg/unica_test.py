@@ -4,8 +4,7 @@
 # Simulating universes of unica for Cuthbert's and BBC's methods
 
 # LIBRARIES
-import cuthbert
-import bbc
+from iceberg import bbc, cuthbert
 
 # SET SIMULATION PARAMETERS, INITIALIZE STORAGE STRUCTURE
 num_samples = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
