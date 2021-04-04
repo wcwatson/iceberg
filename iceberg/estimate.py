@@ -1,4 +1,4 @@
-"""Exposes functions to estimate population size given a list of samples"""
+"""Exposes functions to estimate population size given a list of samples."""
 
 from collections import Counter
 
@@ -43,10 +43,7 @@ def _calculate_error(estimate, num_entities, sample_sizes):
 
 
 def _recurse_to_best_estimate(
-        lower_bound,
-        upper_bound,
-        num_entities,
-        sample_sizes
+        lower_bound, upper_bound, num_entities, sample_sizes
 ):
     """Recursively finds the best estimate of population size by identifying
     which half of [lower_bound, upper_bound] contains the best estimate.
@@ -126,10 +123,7 @@ def _find_best_estimate(num_entities, max_pop_size, sample_sizes):
 
 
 def _cross_validate_estimate(
-        simulated_population,
-        samples,
-        num_observed,
-        cv_ppn
+        simulated_population, samples, num_observed, cv_ppn
 ):
     """Returns a cross-validated estimate of population size.
 
