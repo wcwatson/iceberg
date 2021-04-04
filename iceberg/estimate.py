@@ -1,4 +1,4 @@
-"""Exposes functions to estimate population size given a list of samples"""
+"""Exposes functions to estimate population size given a list of samples."""
 
 from collections import Counter
 

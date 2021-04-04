@@ -1,6 +1,5 @@
-"""Exposes several functions that simulate situations to demonstrate the
-capabilities of the estimators defined elsewhere in iceberg.
-"""
+"""Exposes several functions that simulate situations illustrating the
+capabilities of the estimators defined elsewhere in iceberg."""
 
 import numpy as np
 
