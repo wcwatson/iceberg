@@ -1,4 +1,4 @@
-"""Exposes functions to estimate population size given a set of samples"""
+"""Exposes functions to estimate population size given a list of samples"""
 
 from collections import Counter
 
@@ -21,7 +21,7 @@ def _calculate_error(estimate, num_entities, sample_sizes):
     Returns
     -------
     float
-        The error incurred at this estimate of population size.
+        The error incurred by this estimate of population size.
     """
 
     # Contribution to log sample expectation from each sample
@@ -29,15 +29,16 @@ def _calculate_error(estimate, num_entities, sample_sizes):
         np.log(estimate - sample_size) - np.log(estimate)
         for sample_size in sample_sizes
     ]
-    # Contribution to log sample expectation from population size
+    # Contribution to log sample expectation from estimated population size
     log_pop_contribution = np.log(estimate)
-    # Expectation of unobserved entity count from sample distribution - cf. the
-    # rational function in Cuthbert (2009)
-    sample_expectation = np.exp(log_sample_contributions + log_pop_contribution)
+    # Expectation of unobserved entity count from sample distribution
+    sample_expectation = np.exp(
+        sum(log_sample_contributions) + log_pop_contribution
+    )
     # Expectation of unobserved entity count from counting (i.e., the difference
-    # between the estimated population size and the number of observed entities
+    # between the estimated population size and the number of observed entities)
     count_expectation = estimate - num_entities
-    # Return the difference in expectations
+    # Return the difference in expectations as a measure of error
     return sample_expectation - count_expectation
 
 
@@ -49,8 +50,6 @@ def _recurse_to_best_estimate(
 ):
     """Recursively finds the best estimate of population size by identifying
     which half of [lower_bound, upper_bound] contains the best estimate.
-
-    NB: this method relies on the monotonicity of the error function.
 
     Parameters
     ----------
@@ -69,17 +68,16 @@ def _recurse_to_best_estimate(
     -------
     int
         The best estimate of population size.
-
     """
 
-    # Base case - return the upper bound when the two bounds differ by one or
-    # less
+    # Base case - return the upper bound when the upper and lower bounds are
+    # adjacent
     if upper_bound - lower_bound <= 1:
         return upper_bound
 
     # Otherwise calculate error at midpoint and recursively evaluate the
     # relevant half of the interval
-    midpoint = np.ceil(np.mean(upper_bound, lower_bound))
+    midpoint = int(np.ceil((lower_bound + upper_bound) / 2))
     error_at_midpoint = _calculate_error(midpoint, num_entities, sample_sizes)
     if error_at_midpoint > 0:
         return _recurse_to_best_estimate(
@@ -95,6 +93,10 @@ def _find_best_estimate(num_entities, max_pop_size, sample_sizes):
     """Finds the best integer estimate of population size in the domain
     [num_entities, max_pop_size]. The time complexity is O(log(max_pop_size)).
 
+    NB: this algorithm relies on the facts: that the error function is
+    decreasing on the entire domain, and that it is positive-valued at the
+    domain's lower bound.
+
     Parameters
     ----------
     num_entities: int
@@ -107,7 +109,8 @@ def _find_best_estimate(num_entities, max_pop_size, sample_sizes):
     Returns
     -------
     int
-        The best estimate of population size.
+        The best estimate of population size or, barring that, the maximum
+        allowable estimate.
     """
 
     # Catch case where maximum allowable estimate is still too low and return
@@ -132,16 +135,16 @@ def _cross_validate_estimate(
 
     Parameters
     ----------
-    simulated_population: set
+    simulated_population: list
         A simulated population containing all observed entities and a number of
         simulated entities not in any sample.
     samples: list
-        A list of lists; each element of samples is a list of entities observed
-        in a particular sample.
+        A list of lists; each element is a list of entities observed in a
+        particular sample.
     num_observed: int
-        The number of distinct entities observed in the samples. NB: this is
-        calculable from samples, but it's already calculated in the calling
-        function, so why duplicate effort?
+        The number of distinct entities observed in the samples (this is
+        derivable from samples, but it's already calculated in the calling
+        function, so why duplicate effort?).
     cv_ppn: float
         The proportion of samples to be used for each cross-validation attempt.
 
@@ -152,24 +155,28 @@ def _cross_validate_estimate(
     """
 
     # Select samples to hold as a validation set
-    cv_size = np.ceil(cv_ppn * len(samples))
-    held_samples = np.random.choice(samples, cv_size, replace=False)
+    cv_size = int(np.ceil(cv_ppn * len(samples)))
+    validation_samples = np.random.choice(
+        np.array(samples, dtype=object), cv_size, replace=False
+    ).tolist()
 
     # Construct simulated samples identical in size to the holdout sets
     simulated_entities = set(
-        entity for simulated_sample in set(
-            np.random.choice(simulated_population, len(sample), replace=False)
-            for sample in held_samples
-        )
+        entity for simulated_sample in [
+            np.random.choice(
+                simulated_population, len(sample), replace=False
+            ).tolist()
+            for sample in validation_samples
+        ]
         for entity in simulated_sample
     )
 
     # Identify entities in samples not held back for cross validation
+    retained_samples = [
+        sample for sample in samples if sample not in validation_samples
+    ]
     retained_entities = set(
-        entity
-        for sample in samples
-        if sample not in held_samples
-        for entity in sample
+        entity for sample in retained_samples for entity in sample
     )
 
     # Calculate "new" entities in held-back and simulated samples, determine
@@ -179,9 +186,9 @@ def _cross_validate_estimate(
     correction_factor = max(true_new - simulated_new, 0) / max(simulated_new, 1)
 
     # Return corrected estimate of population size
-    corrected_estimate_of_new_entities = (
+    corrected_estimate_of_new_entities = int(np.ceil(
         (len(simulated_population) - num_observed) * (1 + correction_factor)
-    )
+    ))
     return num_observed + corrected_estimate_of_new_entities
 
 
@@ -192,11 +199,11 @@ def cuthbert(samples, min_survival=0.01, cv=None, cv_ppn=0.2):
     Parameters
     ----------
     samples: list
-        A list of lists; each element of samples is a list of entities observed
-        in a particular sample.
+        A list of lists; each element is a list of entities observed in a
+        particular sample.
     min_survival: float
-        The minimum allowable estimate of the survival rate; defines the
-        maximum population size that will be returned.
+        The minimum allowable estimate of the survival rate; implicitly defines
+        the maximum population size that will be returned.
     cv: int
         The number of cross-validation iterations that should be performed; if
         None then cross-validation will be skipped.
@@ -218,7 +225,7 @@ def cuthbert(samples, min_survival=0.01, cv=None, cv_ppn=0.2):
     # number of sampled entities and min_survival
     sample_sizes = [len(sample) for sample in samples]
     entities = set(entity for sample in samples for entity in sample)
-    max_pop_size = np.ceil(len(entities) / min_survival)
+    max_pop_size = int(np.ceil(len(entities) / min_survival))
     estimates['uncorrected'] = _find_best_estimate(
         len(entities), max_pop_size, sample_sizes
     )
@@ -226,11 +233,11 @@ def cuthbert(samples, min_survival=0.01, cv=None, cv_ppn=0.2):
     # If indicated, generate corrected estimates using cross-validation
     if cv is not None:
         # Generate a simulated population the size of the uncorrected estimate
-        simulated_entities = set(
+        simulated_entities = [
             'simulated_entity_' + str(i)
-            for i in range(estimates['uncorrected'] - len(estimates))
-        )
-        simulated_population = entities.union(simulated_entities)
+            for i in range(estimates['uncorrected'] - len(entities))
+        ]
+        simulated_population = list(entities) + simulated_entities
         # Calculate cv cross-validated estimates
         for _ in range(cv):
             estimates['corrected'].append(
@@ -243,16 +250,16 @@ def cuthbert(samples, min_survival=0.01, cv=None, cv_ppn=0.2):
     return estimates
 
 
-def bbc(samples, delta=0.001):
+def bbc(samples, max_delta=0.001):
     """Estimates population size given a collection of samples without
     replacement, using method proposed in Boneh, Boneh, and Caron (1998).
 
     Parameters
     ----------
     samples: list
-        A list of lists; each element of samples is a list of entities observed
-        in a particular sample.
-    delta: float
+        A list of lists; each element is a list of entities observed in a
+        particular sample.
+    max_delta: float
         The incremental change to which the correction algorithm must converge
         prior to termination.
 
@@ -267,7 +274,7 @@ def bbc(samples, delta=0.001):
         If there are no entities observed exactly once.
     """
 
-    # Generate a dictionary mapping a natural number, n, to the number of
+    # Generate a dictionary mapping natural numbers, n, to the number of
     # entities observed n times across all samples
     entity_counts = dict(Counter(
         [entity for sample in samples for entity in sample]
@@ -283,16 +290,17 @@ def bbc(samples, delta=0.001):
         [frequency_counts[f] / np.exp(f) for f in frequency_counts]
     )
 
-    # Correct for bias in estimate
+    # Correct for bias in estimate of unobserved entities via BBC's suggested
+    # algorithm
     corrected_est = biased_est
-    incremental_delta = delta + 1
-    while incremental_delta > delta:
+    delta = max_delta + 1
+    while delta > max_delta:
         previous_est = corrected_est
         corrected_est = biased_est + (
             previous_est * np.exp(-1 * frequency_counts[1] / previous_est)
         )
-        incremental_delta = abs(corrected_est - previous_est)
+        delta = abs(corrected_est - previous_est)
 
-    # Return estimated total population size
-    corrected_est = np.ceil(corrected_est)
+    # Return corrected estimated total population size
+    corrected_est = int(np.ceil(corrected_est))
     return len(entity_counts) + corrected_est
