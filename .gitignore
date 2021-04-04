@@ -1,4 +1,4 @@
 .idea
 .pytest_cache
-legacy
-notebooks
+legacy/*
+notebooks/*
