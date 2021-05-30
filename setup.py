@@ -1,18 +1,35 @@
 """Setup module for packaging the iceberg-est library"""
 
 from setuptools import setup, find_packages
+import codecs
+import os
 import pathlib
 
-import iceberg
+
+# Auxiliary functionality to read version number
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
+
 
 # Find long project description in README
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
+
 # Run setup
 setup(
     name='iceberg-est',
-    version=iceberg.__version__,
+    version=get_version('iceberg/__init__.py'),
     description='Musicologically motivated population size estimation',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -28,7 +45,7 @@ setup(
         'Programming Language :: Python :: 3.9'
     ],
     packages=find_packages(),
-    package_data={'iceberg': './docs/*'},
+    package_data={'iceberg': ['./docs/*']},
     python_requires='>=3.8, <4',
     install_requires=['numpy']
 )
