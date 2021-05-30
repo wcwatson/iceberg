@@ -90,9 +90,9 @@ def _find_best_estimate(num_entities, max_pop_size, sample_sizes):
     """Finds the best integer estimate of population size in the domain
     [num_entities, max_pop_size]. The time complexity is O(log(max_pop_size)).
 
-    NB: this algorithm relies on the facts: that the error function is
-    decreasing on the entire domain, and that it is positive-valued at the
-    domain's lower bound.
+    NB: this algorithm relies on the following facts: that the error function is
+    decreasing on the entire domain; and that the error function is
+    positive-valued at the domain's lower bound.
 
     Parameters
     ----------
@@ -110,11 +110,15 @@ def _find_best_estimate(num_entities, max_pop_size, sample_sizes):
         allowable estimate.
     """
 
-    # Catch case where maximum allowable estimate is still too low and return
-    # to save computation
+    # Catch cases where maximum allowable estimate is still too low or where
+    # minimum allowable estimate is still too high, and return to save
+    # computation
     error_at_max = _calculate_error(max_pop_size, num_entities, sample_sizes)
     if error_at_max > 0:
         return max_pop_size
+    error_at_min = _calculate_error(num_entities, num_entities, sample_sizes)
+    if error_at_min <= 0:
+        return num_entities
 
     # Return the best estimate in the passed domain
     return _recurse_to_best_estimate(
@@ -173,8 +177,8 @@ def _cross_validate_estimate(
         entity for sample in retained_samples for entity in sample
     )
 
-    # Calculate "new" entities in held-back and simulated samples, determine
-    # correction factor
+    # Calculate number of "new" entities in held-back and simulated samples,
+    # determine correction factor
     true_new = num_observed - len(retained_entities)
     simulated_new = len(simulated_entities.difference(retained_entities))
     correction_factor = max(true_new - simulated_new, 0) / max(simulated_new, 1)
