@@ -1,4 +1,4 @@
-__version__ = '0.3.0'
+"""Package __init__ file."""
 
-import iceberg.estimate
-import iceberg.simulate
+# Project version
+__version__ = '0.3.0'
