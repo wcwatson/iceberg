@@ -15,7 +15,7 @@ def identical_samples_save_one(n_samples=10, sample_size=10):
     Examples
     --------
     >>> identical_samples_save_one()
-    {'bbc': 12, 'cuthbert': {'uncorrected': 10, 'corrected': []}}
+    {'bbc': 12, 'cuthbert': 10}
 
     Parameters
     ----------
@@ -28,7 +28,7 @@ def identical_samples_save_one(n_samples=10, sample_size=10):
     -------
     dict
         A dictionary of estimates; the structure is { 'bbc': int, 'cuthbert':
-        {'uncorrected': int, 'corrected': []} }.
+        int }.
 
     Raises
     ------
@@ -47,7 +47,7 @@ def identical_samples_save_one(n_samples=10, sample_size=10):
     samples[0].append(str(sample_size))
     # Calculate BBC estimate
     results['bbc'] = est.bbc(samples)
-    results['cuthbert'] = {'uncorrected': sample_size, 'corrected': []}
+    results['cuthbert'] = sample_size
     # Return final results
     return results
 
@@ -61,9 +61,9 @@ def unique_entities(n_samples=10, sample_size=10):
     Examples
     --------
     >>> unique_entities()
-    {'bbc': 141, 'cuthbert': {'uncorrected': 4564, 'corrected': []}}
+    {'bbc': 141, 'cuthbert': 4564}
     >>> unique_entities(n_samples=100, sample_size=25)
-    {'bbc': 3503, 'cuthbert': {'uncorrected': 250000, 'corrected': []}}
+    {'bbc': 3503, 'cuthbert': 250000}
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def unique_entities(n_samples=10, sample_size=10):
     -------
     dict
         A dictionary of estimates; the structure is { 'bbc': int, 'cuthbert':
-        {'uncorrected': int, 'corrected': []} }.
+        int }.
 
     Raises
     ------
@@ -98,14 +98,14 @@ def unique_entities(n_samples=10, sample_size=10):
     # Append entity '0' to last sample to ensure Cuthbert convergence and
     # calculate
     samples[n_samples - 1].append('0')
-    results['cuthbert'] = est.cuthbert(samples)
+    results['cuthbert'] = est.cuthbert(samples)['uncorrected']
     # Return final results
     return results
 
 
 def random_samples(pop_size, sample_sizes, n_samples=None):
     """Simulates a random collection of samples taken from a population of a
-    given size and returns BBC and  (uncorrected) Cuthbert estimates of
+    given size and returns BBC and (uncorrected) Cuthbert estimates of
     population size. Can construct samples of uniform size or of varying size,
     depending on the values of the parameters.
 
@@ -113,11 +113,11 @@ def random_samples(pop_size, sample_sizes, n_samples=None):
     --------
     >>> np.random.seed(1729)
     >>> random_samples(1000, 20, 20)
-    {'entities_observed': 330, 'bbc': 449, 'cuthbert': {'uncorrected': 962, 'corrected': []}}
+    {'entities_observed': 330, 'bbc': 449, 'cuthbert': 962}
     >>> random_samples(10000, 20, 200)
-    {'entities_observed': 3297, 'bbc': 4483, 'cuthbert': {'uncorrected': 9960, 'corrected': []}}
+    {'entities_observed': 3297, 'bbc': 4483, 'cuthbert': 9960}
     >>> random_samples(1000, [10, 10, 20, 20, 25, 25, 30, 40, 80, 160])
-    {'entities_observed': 359, 'bbc': 492, 'cuthbert': {'uncorrected': 1053, 'corrected': []}}
+    {'entities_observed': 359, 'bbc': 492, 'cuthbert': 1053}
 
     Parameters
     ----------
@@ -135,7 +135,7 @@ def random_samples(pop_size, sample_sizes, n_samples=None):
     -------
     dict
         A dictionary of estimates; the structure is { 'entities_observed': int,
-        'bbc': int, 'cuthbert': {'uncorrected': int, 'corrected': []} }.
+        'bbc': int, 'cuthbert': int }.
 
     Raises
     ------
@@ -153,13 +153,13 @@ def random_samples(pop_size, sample_sizes, n_samples=None):
 
     # Population of dummy entities
     population = [str(i) for i in range(pop_size)]
-    # Simulate uniformly sized samples
+    # Simulate uniformly sized samples if sample_sizes is an integer
     if isinstance(sample_sizes, int):
         samples = [
             np.random.choice(population, sample_sizes, replace=False).tolist()
             for _ in range(n_samples)
         ]
-    # Simulate samples of varying size
+    # Simulate samples of varying size if sample_sizes is a list
     elif isinstance(sample_sizes, list):
         samples = [
             np.random.choice(population, size, replace=False).tolist()
@@ -175,5 +175,5 @@ def random_samples(pop_size, sample_sizes, n_samples=None):
         set(entity for sample in samples for entity in sample)
     )
     results['bbc'] = est.bbc(samples)
-    results['cuthbert'] = est.cuthbert(samples)
+    results['cuthbert'] = est.cuthbert(samples)['uncorrected']
     return results
