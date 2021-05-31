@@ -1,0 +1,181 @@
+The functionality of the Iceberg library is contained in two modules:
+  * iceberg.estimate
+  * iceberg.simulate
+The below documentation describes the functions exposed in each module. Any
+"auxiliary" functions defined only to facilitate the exposed functions are not
+described.
+
+
+==================
+ iceberg.estimate
+==================
+
+cuthbert(samples, min_survival=0.01, cv=None, cv_ppn=0.2)
+
+    Estimates population size given a collection of samples with replacement,
+    using method proposed in Cuthbert (2009).
+
+    Examples
+    --------
+    See ./cuthbert_bbc_comparison.html and ./dilms_example.html for examples.
+
+    Parameters
+    ----------
+    samples: list
+        A list of lists; each element is a list of entities observed in a
+        particular sample.
+    min_survival: float
+        The minimum allowable estimate of the survival rate; implicitly defines
+        the maximum population size that will be returned.
+    cv: int
+        The number of cross-validation iterations that should be performed; if
+        None then cross-validation will be skipped.
+    cv_ppn: float
+        The proportion of samples to be used for each cross-validation attempt.
+
+    Returns
+    -------
+    dict
+        All estimated population sizes; the structure is { 'uncorrected': int,
+        'corrected': [int] }, where len(dict['corrected']) is equal to cv.
+
+***
+
+bbc(samples, max_delta=0.001):
+
+    Estimates population size given a collection of samples with replacement,
+    using method proposed in Boneh, Boneh, and Caron (1998).
+
+    Examples
+    --------
+    See ./cuthbert_bbc_comparison.html and ./dilms_example.html for examples.
+
+    Parameters
+    ----------
+    samples: list
+        A list of lists; each element is a list of entities observed in a
+        particular sample.
+    max_delta: float
+        The incremental change to which the correction algorithm must converge
+        prior to termination.
+
+    Returns
+    -------
+    int
+        The estimated population size.
+
+    Raises
+    ------
+    ValueError
+        If there are no entities observed exactly once.
+
+
+==================
+ iceberg.simulate
+==================
+
+identical_samples_save_one(n_samples=10, sample_size=10)
+
+    Simulates a collection of n_samples identical samples of size sample_size,
+    appends one unique entity to one sample, and calculates the BBC estimate of
+    the population size; Cuthbert's method is analytically solvable and will
+    yield sample_size as an estimate of the population.
+
+    Examples
+    --------
+    >>> identical_samples_save_one()
+    {'bbc': 12, 'cuthbert': 10}
+
+    Parameters
+    ----------
+    n_samples: int
+        The number of samples to simulate.
+    sample_size: int
+        The (uniform) size of each sample.
+
+    Returns
+    -------
+    dict
+        A dictionary of estimates; the structure is { 'bbc': int, 'cuthbert':
+        int }.
+
+    Raises
+    ------
+    ValueError
+        If n <=1.
+
+***
+
+unique_entities(n_samples=10, sample_size=10)
+
+    Simulates a collection of n_samples samples of size sample_size where no
+    entity is observed more than once, calculates the BBC estimate of the
+    population size, and calculates the uncorrected Cuthbert estimate after
+    repeating one entity to ensure convergence.
+
+    Examples
+    --------
+    >>> unique_entities()
+    {'bbc': 141, 'cuthbert': 4564}
+    >>> unique_entities(n_samples=100, sample_size=25)
+    {'bbc': 3503, 'cuthbert': 250000}
+
+    Parameters
+    ----------
+    n_samples: int
+        The number of samples to simulate.
+    sample_size: int
+        The (uniform) size of each sample.
+
+    Returns
+    -------
+    dict
+        A dictionary of estimates; the structure is { 'bbc': int, 'cuthbert':
+        int }.
+
+    Raises
+    ------
+    ValueError
+        If n <=1.
+
+***
+
+random_samples(pop_size, sample_sizes, n_samples=None)
+
+    Simulates a random collection of samples taken from a population of a given
+    size and returns BBC and (uncorrected) Cuthbert estimates of population
+    size. Can construct samples of uniform size or of varying size, depending on
+    the values of the parameters.
+
+    Examples
+    --------
+    >>> np.random.seed(1729)
+    >>> random_samples(1000, 20, 20)
+    {'entities_observed': 330, 'bbc': 449, 'cuthbert': 962}
+    >>> random_samples(10000, 20, 200)
+    {'entities_observed': 3297, 'bbc': 4483, 'cuthbert': 9960}
+    >>> random_samples(1000, [10, 10, 20, 20, 25, 25, 30, 40, 80, 160])
+    {'entities_observed': 359, 'bbc': 492, 'cuthbert': 1053}
+
+    Parameters
+    ----------
+    pop_size: int
+        The size of the population to be simulated.
+    sample_sizes: list or int
+        If a list of ints, specifies the size of each sample individually. If an
+        int, the uniform size of all samples (in this case n_samples is
+        required).
+    n_samples: int
+        If sample_sizes is an int, then n_samples indicates the number of
+        uniformly sized samples that should be simulated.
+
+    Returns
+    -------
+    dict
+        A dictionary of estimates; the structure is { 'entities_observed': int,
+        'bbc': int, 'cuthbert': int }.
+
+    Raises
+    ------
+    ValueError
+        If pop_size < sample_sizes or max(sample_sizes).
