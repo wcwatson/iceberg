@@ -1,6 +1,0 @@
-Next steps:
-
-* Flesh out test_iceberg and conftest (maybe use a fixture to define a dataset?)
-* Flesh out docs and update the readme
-* Look into what needs to be done setuptools-wise to ready for PyPI
-* Contact Myke with the exciting news
