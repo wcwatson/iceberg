@@ -38,15 +38,15 @@ setup(
     author_email='wcwatson92@gmail.com',
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering :: Mathematics',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9'
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.8'
     ],
-    packages=find_packages(exclude=['tests']),
-    package_data={'iceberg': ['./docs/*']},
-    python_requires='>=3.8, <4',
+    packages=find_packages(),
+    include_package_data=True,
+    python_requires='>=3.6, <4',
     install_requires=['numpy']
 )
