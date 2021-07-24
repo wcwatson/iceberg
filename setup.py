@@ -36,6 +36,7 @@ setup(
     url='https://github.com/wcwatson/iceberg',
     author='William Watson',
     author_email='wcwatson92@gmail.com',
+    license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
@@ -44,7 +45,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9'
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     package_data={'iceberg': ['./docs/*']},
     python_requires='>=3.8, <4',
     install_requires=['numpy']
